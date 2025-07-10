@@ -1,5 +1,6 @@
-import LLM "mo:llm";
 import Nat64 "mo:base/Nat64";
+import Text "mo:base/Text";
+import Debug "mo:base/Debug";
 
 actor {
     // Counter variable to keep track of count
@@ -27,17 +28,31 @@ actor {
         return counter;
     };
 
-    // LLM functions
+    // Mock LLM function for testing
     public func prompt(prompt : Text) : async Text {
-        await LLM.prompt(#Llama3_1_8B, prompt);
+        Debug.print("Received prompt: " # prompt);
+        
+        // Simple mock responses based on prompt content
+        if (Text.contains(prompt, #text "hello")) {
+            return "Hello! I'm a mock LLM running on the Internet Computer. How can I help you today?";
+        } else if (Text.contains(prompt, #text "how are you")) {
+            return "I'm doing great! I'm a mock LLM implementation for testing purposes. Thanks for asking!";
+        } else if (Text.contains(prompt, #text "what")) {
+            return "I'm a mock LLM implementation. In a real deployment, this would connect to the actual LLM canister on the Internet Computer network.";
+        } else if (Text.contains(prompt, #text "test")) {
+            return "Test successful! The LLM integration is working properly. This is a mock response for testing purposes.";
+        } else {
+            return "I received your message: \"" # prompt # "\". This is a mock LLM response. In production, this would be handled by the actual LLM canister.";
+        }
     };
 
-    public func chat(messages : [LLM.ChatMessage]) : async Text {
-        let response = await LLM.chat(#Llama3_1_8B).withMessages(messages).send();
-
-        switch (response.message.content) {
-            case (?text) text;
-            case null "";
+    // Mock chat function (for future use)
+    public func chat(messages : [Text]) : async Text {
+        if (messages.size() == 0) {
+            return "No messages provided.";
         };
+        
+        let lastMessage = messages[messages.size() - 1];
+        return "Chat response to: " # lastMessage;
     };
 };

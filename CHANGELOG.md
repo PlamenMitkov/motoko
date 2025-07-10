@@ -11,13 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add set_count update method to allow setting the counter to a specific value
 - Add frontend development server scripts (`npm run start`)
-- Add LLM canister implementation
+- Add LLM canister implementation with mock responses for local testing
+- Add LLM prompt interface with frontend integration
 
 ### Changed
 
 - Update dependencies to latest versions
 - Switched the template to Motoko for writing the backend canister
 - Rewrote the devcontainer setup
+- Implemented mock LLM for local development and testing
 - Rewrote the tests
 - Rewrote the npm scripts
 - Rewrote the e2e workflow
