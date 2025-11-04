@@ -3,7 +3,12 @@ import ReactIcon from "../assets/React-icon.webp";
 
 // Import components and views
 import { Loader, ErrorDisplay } from "./components";
-import { GreetingView, CounterView, LlmPromptView } from "./views";
+import {
+  GreetingView,
+  CounterView,
+  LlmPromptView,
+  EcoTrailsView,
+} from "./views";
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -32,7 +37,7 @@ function App() {
         `}
       </style>
       <div className="flex min-h-screen items-center justify-center bg-gray-800 text-white">
-        <div className="mx-auto w-full max-w-4xl space-y-8 p-8 text-center">
+        <div className="mx-auto w-full max-w-6xl space-y-8 p-8 text-center">
           <div className="mb-8">
             <a href="https://reactjs.org" target="_blank" rel="noreferrer">
               <img
@@ -45,21 +50,31 @@ function App() {
           </div>
 
           <div className="space-y-4">
-            <h1 className="text-4xl font-bold">Vibe Coding Template</h1>
+            <h1 className="text-4xl font-bold">🌿 Екопътеки България</h1>
             <h2 className="text-xl">React + Motoko + Internet Computer</h2>
           </div>
 
-          {/* Content Sections */}
-          <div className="space-y-6">
-            {/* Greeting Section */}
-            <GreetingView onError={handleError} setLoading={setLoading} />
-
-            {/* Counter Section */}
-            <CounterView onError={handleError} setLoading={setLoading} />
-
-            {/* LLM Prompt Section */}
-            <LlmPromptView onError={handleError} setLoading={setLoading} />
+          {/* Main Content - Eco Trails Chatbot */}
+          <div className="mb-8">
+            <EcoTrailsView onError={handleError} setLoading={setLoading} />
           </div>
+
+          {/* Original Template Sections (Collapsible) */}
+          <details className="rounded-lg bg-gray-700 p-4">
+            <summary className="cursor-pointer text-lg font-semibold text-gray-300 hover:text-white">
+              📦 Original Template Features
+            </summary>
+            <div className="mt-4 space-y-6">
+              {/* Greeting Section */}
+              <GreetingView onError={handleError} setLoading={setLoading} />
+
+              {/* Counter Section */}
+              <CounterView onError={handleError} setLoading={setLoading} />
+
+              {/* LLM Prompt Section */}
+              <LlmPromptView onError={handleError} setLoading={setLoading} />
+            </div>
+          </details>
 
           {/* Loading and Error States */}
           {loading && !error && <Loader />}

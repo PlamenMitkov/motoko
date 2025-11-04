@@ -2,3 +2,4 @@
 export * from "./CounterView";
 export * from "./GreetingView";
 export * from "./LlmPromptView";
+export * from "./EcoTrailsView";

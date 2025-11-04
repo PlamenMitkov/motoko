@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add frontend development server scripts (`npm run start`)
 - Add LLM canister implementation with mock responses for local testing
 - Add LLM prompt interface with frontend integration
+- Add eco-trails chatbot with AI-powered recommendations using ICP LLM Canister
+- Add complete trail database with search functionality (name, description, region, keywords, difficulty)
+- Add custom JSON parsing for AI responses with coordinate extraction
+- Add ICPChatService - modular JavaScript class for ICP canister communication
+- Add comprehensive ICP integration examples and documentation
 
 ### Changed
 
@@ -24,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rewrote the npm scripts
 - Rewrote the e2e workflow
 - Fix mops installation in CI workflow by using npx
+- Migrate OpenAI GPT integration to ICP LLM Canister (Llama 3.1 8B)
+- Replace REST API calls with direct ICP canister communication using @dfinity/agent
 
 ## [0.1.0] - 2025-04-24
 

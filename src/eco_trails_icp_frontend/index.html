@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <!-- Метаданни за документа -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Туристически чатбот за екопътеки в България - Открийте скрити природни богатства"
+    />
+    <meta
+      name="keywords"
+      content="екопътеки, туризъм, България, природа, маршрути"
+    />
+    <meta name="author" content="EcoTrails Bulgaria" />
+
+    <!-- Заглавие на страницата -->
+    <title>EcoTrails Bulgaria - Интелигентен туристически асистент</title>
+
+    <!-- Връзки към външни ресурси -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/main.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Икона за браузъра -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='images/favicon.svg') }}"
+    />
+  </head>
+
+  <body>
+    <!-- Главен контейнер на приложението -->
+    <div class="app-container">
+      <!-- Навигационен панел с кръгли бутони -->
+      <nav
+        class="circuit-navigation"
+        role="navigation"
+        aria-label="Основна навигация"
+      >
+        <div class="nav-button-group">
+          <!-- Бутон за начална страница -->
+          <button
+            class="nav-btn active"
+            data-slide="home"
+            aria-label="Начална страница"
+            title="Начална страница"
+          >
+            <img
+              src="{{ url_for('static', filename='images/home-icon.svg') }}"
+              alt="Начало"
+              class="nav-icon"
+            />
+          </button>
+
+          <!-- Бутон за информация -->
+          <button
+            class="nav-btn"
+            data-slide="about"
+            aria-label="За нас"
+            title="Информация за проекта"
+          >
+            <img
+              src="{{ url_for('static', filename='images/info-icon.svg') }}"
+              alt="Информация"
+              class="nav-icon"
+            />
+          </button>
+
+          <!-- Бутон за инструкции -->
+          <button
+            class="nav-btn"
+            data-slide="instructions"
+            aria-label="Инструкции"
+            title="Как да използвате системата"
+          >
+            <img
+              src="{{ url_for('static', filename='images/guide-icon.svg') }}"
+              alt="Инструкции"
+              class="nav-icon"
+            />
+          </button>
+
+          <!-- Бутон за чатбот -->
+          <button
+            class="nav-btn"
+            data-slide="chat"
+            aria-label="Чатбот"
+            title="Интелигентен асистент"
+          >
+            <img
+              src="{{ url_for('static', filename='images/chat-icon.svg') }}"
+              alt="Чатбот"
+              class="nav-icon"
+            />
+          </button>
+
+          <!-- Бутон за карта -->
+          <button
+            class="nav-btn"
+            data-slide="map"
+            aria-label="Карта"
+            title="Интерактивна карта"
+          >
+            <img
+              src="{{ url_for('static', filename='images/map-icon.svg') }}"
+              alt="Карта"
+              class="nav-icon"
+            />
+          </button>
+        </div>
+      </nav>
+
+      <!-- Контейнер за слайдовете -->
+      <main class="slider-container" role="main">
+        <!-- Слайд 1: Начална страница -->
+        <section class="slide active" id="home-slide" data-slide="home">
+          <!-- Фонов изображение -->
+          <img
+            src="{{ url_for('static', filename='images/hero-bg.jpg') }}"
+            alt="Красива българска природа"
+            class="slide-background"
+          />
+
+          <!-- Съдържание на слайда -->
+          <div class="content-overlay">
+            <header class="slide-header">
+              <h1 class="main-title">Открийте скрити природни богатства</h1>
+              <p class="subtitle">
+                Интелигентна система за управление на туристически маршрути в
+                България
+              </p>
+            </header>
+
+            <!-- Статистики -->
+            <div class="statistics-grid">
+              <div class="stat-item">
+                <img
+                  src="{{ url_for('static', filename='images/trail-icon.svg') }}"
+                  alt="Маршрути"
+                  class="stat-icon"
+                />
+                <div class="stat-content">
+                  <span class="stat-number">150+</span>
+                  <span class="stat-label">Екопътеки</span>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <img
+                  src="{{ url_for('static', filename='images/region-icon.svg') }}"
+                  alt="Региони"
+                  class="stat-icon"
+                />
+                <div class="stat-content">
+                  <span class="stat-number">28</span>
+                  <span class="stat-label">Региона</span>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <img
+                  src="{{ url_for('static', filename='images/users-icon.svg') }}"
+                  alt="Потребители"
+                  class="stat-icon"
+                />
+                <div class="stat-content">
+                  <span class="stat-number">5000+</span>
+                  <span class="stat-label">Потребители</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Слайд 2: Информация за проекта -->
+        <section class="slide" id="about-slide" data-slide="about">
+          <img
+            src="{{ url_for('static', filename='images/about-bg.jpg') }}"
+            alt="Планински пейзаж"
+            class="slide-background"
+          />
+
+          <div class="content-overlay">
+            <header class="slide-header">
+              <h2 class="section-title">За нашия проект</h2>
+              <p class="section-description">
+                Иновативна платформа за устойчив туризъм и опазване на природата
+              </p>
+            </header>
+
+            <!-- Двуколонна структура -->
+            <div class="about-grid">
+              <div class="about-content">
+                <h3 class="subsection-title">Нашата мисия</h3>
+                <p class="text-content">
+                  Създаваме мост между технологиите и природата, като
+                  предоставяме интелигентни решения за откриване и изследване на
+                  българските екопътеки. Нашата цел е да насърчим отговорния
+                  туризъм и да опазим природното наследство за бъдещите
+                  поколения.
+                </p>
+
+                <h3 class="subsection-title">Ключови функции</h3>
+                <ul class="feature-list">
+                  <li>🤖 AI-базиран туристически асистент</li>
+                  <li>🗺️ Интерактивни карти с GPS навигация</li>
+                  <li>🔍 Интелигентно търсене на маршрути</li>
+                  <li>📱 Мобилно-оптимизиран интерфейс</li>
+                  <li>🌱 Фокус върху устойчивия туризъм</li>
+                </ul>
+              </div>
+
+              <div class="about-image">
+                <img
+                  src="{{ url_for('static', filename='images/nature-collage.jpg') }}"
+                  alt="Колаж от български природни забележителности"
+                  class="responsive-image"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Слайд 3: Инструкции за използване -->
+        <section
+          class="slide"
+          id="instructions-slide"
+          data-slide="instructions"
+        >
+          <img
+            src="{{ url_for('static', filename='images/instructions-bg.jpg') }}"
+            alt="Туристи на пътека"
+            class="slide-background"
+          />
+
+          <div class="content-overlay">
+            <header class="slide-header">
+              <h2 class="section-title">Как да използвате системата</h2>
+              <p class="section-description">
+                Следвайте тези прости стъпки за най-добро преживяване
+              </p>
+            </header>
+
+            <!-- Стъпки за използване -->
+            <div class="instruction-steps">
+              <div class="step-card">
+                <div class="step-number">1</div>
+                <img
+                  src="{{ url_for('static', filename='images/step1.jpg') }}"
+                  alt="Избор на категория"
+                  class="step-image"
+                />
+                <h3 class="step-title">Изберете категория</h3>
+                <p class="step-description">
+                  Изберете желана категория от нашите маршрути според вашите
+                  предпочитания и физическа подготовка.
+                </p>
+              </div>
+
+              <div class="step-card">
+                <div class="step-number">2</div>
+                <img
+                  src="{{ url_for('static', filename='images/step2.jpg') }}"
+                  alt="Разглеждане на маршрути"
+                  class="step-image"
+                />
+                <h3 class="step-title">Разгледайте маршрутите</h3>
+                <p class="step-description">
+                  Прегледайте предложените маршрути с подробна информация за
+                  трудност, продължителност и забележителности.
+                </p>
+              </div>
+
+              <div class="step-card">
+                <div class="step-number">3</div>
+                <img
+                  src="{{ url_for('static', filename='images/step3.jpg') }}"
+                  alt="Използване на чатбот"
+                  class="step-image"
+                />
+                <h3 class="step-title">Използвайте чатбота</h3>
+                <p class="step-description">
+                  Задавайте въпроси на нашия AI асистент за персонализирани
+                  препоръки и детайлна информация.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Слайд 4: Чатбот интерфейс -->
+        <section class="slide" id="chat-slide" data-slide="chat">
+          <img
+            src="{{ url_for('static', filename='images/chat-bg.jpg') }}"
+            alt="Планински изглед"
+            class="slide-background"
+          />
+
+          <div class="content-overlay">
+            <!-- Контейнер за чата -->
+            <div class="chat-container">
+              <header class="chat-header">
+                <h2 class="chat-title">🤖 Туристически асистент</h2>
+                <p class="chat-subtitle">
+                  Задайте въпрос за екопътеки и маршрути в България
+                </p>
+              </header>
+
+              <!-- Област за съобщения -->
+              <div
+                class="chat-messages"
+                id="chat-messages"
+                role="log"
+                aria-live="polite"
+              >
+                <!-- Приветствено съобщение -->
+                <div class="message ai-message">
+                  <div class="message-content">
+                    Здравейте! 👋 Аз съм вашият туристически асистент. Как мога
+                    да ви помогна да откриете перфектната екопътека?
+                  </div>
+                  <div class="message-timestamp">Сега</div>
+                </div>
+              </div>
+
+              <!-- Форма за въвеждане на съобщения -->
+              <form class="chat-input-form" id="chat-form">
+                <div class="input-container">
+                  <textarea
+                    class="chat-textarea bubble"
+                    id="user-input"
+                    placeholder="Напишете вашия въпрос тук... (например: 'Покажи ми лесни маршрути около София')"
+                    rows="3"
+                    maxlength="500"
+                    aria-label="Въведете съобщение"
+                    required
+                  ></textarea>
+
+                  <div class="input-actions">
+                    <button
+                      type="submit"
+                      class="send-btn bubble"
+                      id="send-btn"
+                      aria-label="Изпрати съобщение"
+                    >
+                      <span class="btn-text">Изпрати</span>
+                      <span class="btn-icon">📤</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <!-- Индикатор за зареждане -->
+              <div
+                class="loading-indicator"
+                id="loading-indicator"
+                style="display: none"
+              >
+                <div class="loading-dots">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </div>
+                <span class="loading-text">Асистентът размишлява...</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Слайд 5: Интерактивна карта -->
+        <section class="slide" id="map-slide" data-slide="map">
+          <img
+            src="{{ url_for('static', filename='images/map-bg.jpg') }}"
+            alt="Топографска карта"
+            class="slide-background"
+          />
+
+          <div class="content-overlay">
+            <header class="slide-header">
+              <h2 class="section-title">Интерактивна карта</h2>
+              <p class="section-description">
+                Изследвайте екопътеките на интерактивната карта
+              </p>
+            </header>
+
+            <!-- Контейнер за картата -->
+            <div class="map-container">
+              <!-- Основна карта -->
+              <div
+                id="main-map"
+                class="interactive-map"
+                role="application"
+                aria-label="Интерактивна карта на екопътеки"
+              >
+                <!-- Картата се зарежда динамично чрез JavaScript -->
+              </div>
+
+              <!-- Контроли за картата -->
+              <div class="map-controls">
+                <div class="control-group">
+                  <button
+                    class="control-btn"
+                    id="show-all-trails"
+                    title="Покажи всички маршрути"
+                  >
+                    <span class="control-icon">🗺️</span>
+                    <span class="control-text">Всички маршрути</span>
+                  </button>
+
+                  <button
+                    class="control-btn"
+                    id="locate-user"
+                    title="Намери моето местоположение"
+                  >
+                    <span class="control-icon">📍</span>
+                    <span class="control-text">Моето местоположение</span>
+                  </button>
+
+                  <button
+                    class="control-btn"
+                    id="toggle-satellite"
+                    title="Превключи сателитен изглед"
+                  >
+                    <span class="control-icon">🛰️</span>
+                    <span class="control-text">Сателитен изглед</span>
+                  </button>
+                </div>
+
+                <!-- Филтри за картата -->
+                <div class="map-filters">
+                  <select
+                    class="filter-select"
+                    id="difficulty-filter"
+                    aria-label="Филтър по трудност"
+                  >
+                    <option value="">Всички трудности</option>
+                    <option value="лесна">Лесна</option>
+                    <option value="средна">Средна</option>
+                    <option value="трудна">Трудна</option>
+                  </select>
+
+                  <select
+                    class="filter-select"
+                    id="region-filter"
+                    aria-label="Филтър по регион"
+                  >
+                    <option value="">Всички региони</option>
+                    <option value="софия">София област</option>
+                    <option value="пловдив">Пловдив област</option>
+                    <option value="варна">Варна област</option>
+                    <option value="бургас">Бургас област</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Информационен панел -->
+              <div
+                class="map-info-panel"
+                id="map-info-panel"
+                style="display: none"
+              >
+                <div class="info-header">
+                  <h3 class="info-title" id="trail-name">Име на маршрута</h3>
+                  <button
+                    class="close-btn"
+                    id="close-info-panel"
+                    aria-label="Затвори информационния панел"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div class="info-content">
+                  <p class="trail-description" id="trail-description">
+                    Описание на маршрута
+                  </p>
+                  <div class="trail-details">
+                    <span class="detail-item">
+                      <strong>Трудност:</strong>
+                      <span id="trail-difficulty">-</span>
+                    </span>
+                    <span class="detail-item">
+                      <strong>Продължителност:</strong>
+                      <span id="trail-duration">-</span>
+                    </span>
+                    <span class="detail-item">
+                      <strong>Регион:</strong>
+                      <span id="trail-region">-</span>
+                    </span>
+                  </div>
+                  <div class="info-actions">
+                    <button class="action-btn primary" id="get-directions">
+                      📍 Навигация
+                    </button>
+                    <button class="action-btn secondary" id="save-trail">
+                      ❤️ Запази
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- JavaScript библиотеки и скриптове -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <!-- Структурирани данни за SEO -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "EcoTrails Bulgaria",
+        "description": "Интелигентен туристически асистент за екопътеки в България",
+        "url": "{{ request.url }}",
+        "applicationCategory": "TravelApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "BGN"
+        }
+      }
+    </script>
+  </body>
+</html>
