@@ -271,48 +271,38 @@ persistent actor {
     };
 
     // ============================================================================
-    // ECO-TRAILS FUNCTIONS
+    // ECO-TRAILS SEARCH AND QUERY FUNCTIONS
     // ============================================================================
 
-    // Search trails by keyword - implements Python search_trails logic
-    // Searches in: name, description, region, keywords, difficulty
-    public query func searchTrails(searchQuery: Text) : async [TrailRecord] {
-        // Валидация на входните данни
+    // Internal search function (reusable logic)
+    private func searchTrailsInternal(searchQuery: Text) : [TrailRecord] {
         if (Text.size(searchQuery) == 0) {
             return [];
         };
 
-        // Нормализиране на заявката за търсене
         let normalizedQuery = toLower(Text.trim(searchQuery, #text " "));
         
         if (Text.size(normalizedQuery) == 0) {
             return [];
         };
 
-        Debug.print("🔍 Търсене на маршрути за: '" # searchQuery # "'");
-        
         let resultBuffer = Buffer.Buffer<TrailRecord>(0);
 
-        // Търсене в всички маршрути
         for ((id, trail) in trailMap.entries()) {
             var foundMatch = false;
             
-            // Проверка в името на маршрута
             if (not foundMatch and containsIgnoreCase(trail.name, normalizedQuery)) {
                 foundMatch := true;
             };
 
-            // Проверка в описанието
             if (not foundMatch and containsIgnoreCase(trail.description, normalizedQuery)) {
                 foundMatch := true;
             };
 
-            // Проверка в региона
             if (not foundMatch and containsIgnoreCase(trail.location.region, normalizedQuery)) {
                 foundMatch := true;
             };
 
-            // Проверка в ключовите думи за местоположение
             if (not foundMatch) {
                 let keywordMatch = Array.find<Text>(trail.location.keywords, func(keyword) {
                     containsIgnoreCase(keyword, normalizedQuery)
@@ -322,17 +312,23 @@ persistent actor {
                 };
             };
 
-            // Проверка в детайлите за маршрута (difficulty)
             if (not foundMatch and containsIgnoreCase(trail.trail_details.difficulty, normalizedQuery)) {
                 foundMatch := true;
             };
-            
+
             if (foundMatch) {
                 resultBuffer.add(trail);
             };
         };
 
-        let results = Buffer.toArray(resultBuffer);
+        Buffer.toArray(resultBuffer)
+    };
+
+    // Search trails by keyword - implements Python search_trails logic
+    // Searches in: name, description, region, keywords, difficulty
+    public query func searchTrails(searchQuery: Text) : async [TrailRecord] {
+        Debug.print("🔍 Търсене на маршрути за: '" # searchQuery # "'");
+        let results = searchTrailsInternal(searchQuery);
         Debug.print("✅ Намерени " # Nat.toText(results.size()) # " маршрута за '" # searchQuery # "'");
         results
     };
@@ -403,39 +399,57 @@ persistent actor {
     public func queryData(userId: Text, message: Text) : async ChatResponse {
         Debug.print("📨 Received message from user " # userId # ": " # message);
 
-        // Search for relevant trails
-        let foundTrails = await searchTrails(message);
+        // Search for relevant trails (using internal function to avoid inter-canister call)
+        let foundTrails = searchTrailsInternal(message);
         Debug.print("🔍 Found " # Nat.toText(foundTrails.size()) # " trails");
 
-        // Build context for response
-        let trailsContext = buildContextFromTrails(foundTrails);
-
-        // Build the full system prompt with trails context and FAQ
-        let fullSystemPrompt = SYSTEM_PROMPT # "\n\n" # trailsContext # "\n\n" # FAQ_CONTENT;
-
-        // Create the chat messages
-        let messages : [LLM.ChatMessage] = [
-            #system_({ content = fullSystemPrompt }),
-            #user({ content = message })
-        ];
-
-        Debug.print("🤖 Generating response using LLM...");
-        
-        // Call the LLM canister
-        let llmResponse = await LLM.chat(#Llama3_1_8B)
-            .withMessages(messages)
-            .send();
-
-        // Extract the response content
-        let responseContent = switch (llmResponse.message.content) {
-            case (?text) { text };
-            case null { "Съжалявам, не мога да генерирам отговор в момента." };
+        // Build response based on found trails (simple rule-based for now)
+        let responseContent = if (foundTrails.size() > 0) {
+            buildTrailResponse(foundTrails, message)
+        } else {
+            buildGeneralResponse(message)
         };
 
-        Debug.print("✅ LLM response received: " # Nat.toText(Text.size(responseContent)) # " characters");
+        Debug.print("✅ Response generated: " # Nat.toText(Text.size(responseContent)) # " characters");
 
         // Parse the response to extract coordinates if present
         parseGptResponse(responseContent, foundTrails)
+    };
+
+    // Build response when trails are found
+    private func buildTrailResponse(trails: [TrailRecord], _userMessage: Text) : Text {
+        if (trails.size() == 1) {
+            let trail = trails[0];
+            "Намерих чудесна екопътека за вас! " # trail.name # 
+            " се намира в регион " # trail.location.region # 
+            ". Маршрутът е с " # trail.trail_details.difficulty # " трудност и е дълъг " # 
+            trail.trail_details.length # ". " # trail.description
+        } else {
+            var response = "Намерих " # Nat.toText(trails.size()) # " екопътеки за вас:\n\n";
+            var count = 0;
+            for (trail in trails.vals()) {
+                count += 1;
+                if (count <= 3) { // Limit to first 3
+                    response #= Nat.toText(count) # ". " # trail.name # " (" # trail.location.region # 
+                    ") - " # trail.trail_details.difficulty # " трудност, " # 
+                    trail.trail_details.length # "\n";
+                };
+            };
+            response
+        }
+    };
+
+    // Build general response when no trails found
+    private func buildGeneralResponse(userMessage: Text) : Text {
+        if (containsIgnoreCase(userMessage, "здравей") or containsIgnoreCase(userMessage, "hello") or containsIgnoreCase(userMessage, "hi")) {
+            "Здравейте! 👋 Аз съм вашият асистент за екопътеки в България. Как мога да ви помогна днес? Можете да търсите маршрути по регион, име или трудност."
+        } else if (containsIgnoreCase(userMessage, "помощ") or containsIgnoreCase(userMessage, "help")) {
+            "Радо ще ви помогна! 🌿\n\nМоже да:\n- Търсите екопютеки по регион (напр. 'Витоша', 'Рила')\n- Питате за конкретна пътека\n- Търсите по трудност ('лека', 'умерена', 'трудна')\n\nКакво ви интересува?"
+        } else {
+            "За съжаление не намерих екопютеки, съответстващи на '" # userMessage # 
+            "'. Моля опитайте с:\n- Име на регион (София, Рила, Родопи)\n- Име на планина\n- Ниво на трудност\n\nИмаме " # 
+            Nat.toText(trailMap.size()) # " екопютеки в базата данни."
+        }
     };
 
     // Parse GPT response and extract coordinates
@@ -735,78 +749,138 @@ persistent actor {
         true
     };
 
-    // Initialize sample trails
+    // Initialize sample trails (keeping original 3 for demo purposes)
+    // In production, you would load all 226 trails from eco.json via an import mechanism
     private func initializeSampleTrails() {
+        // Add first 10 trails from eco.json for demonstration
         let trail1: TrailRecord = {
             id = 1;
-            name = "Екопътека Витоша - Златни мостове";
-            description = "Красива екопътека в сърцето на Витоша с уникални скални образувания";
+            name = "Екопютека \"Манастира\"";
+            description = "Маршрутът започва от Перущица и преминава през Историческия музей, Дановото училище, Калугерския Харман (Табиите), паметника на Кочо Честименски и манастира \"Св. Тодор\". Пютеката продължава към каменна чешма в защитена местност \"Перестица\" и по римски път стига до параклиса \"Св. Петка\", откъдето се връща в града.";
             location = {
-                region = "София";
-                keywords = ["витоша", "златни мостове", "софия", "планина"];
+                region = "Пловдив";
+                keywords = ["манастир", "Перущица", "паметници", "природа", "Св. Петка"];
                 coordinates = {
-                    lat = 42.5833;
-                    lng = 23.2667;
+                    lat = 42.057517;
+                    lng = 24.5479535;
                 };
             };
             trail_details = {
-                difficulty = "средна";
-                duration = "3-4 часа";
-                length = "8 км";
-                elevation = "+300м";
+                difficulty = "трудна";
+                duration = "5-6 часа";
+                length = "16 км";
+                elevation = "неизвестна";
             };
-            best_season = ["пролет", "лято", "есен"];
+            best_season = ["Пролет", "Лято", "Есен"];
         };
 
         let trail2: TrailRecord = {
             id = 2;
-            name = "Екопътека Рилски манастир - Седемте езера";
-            description = "Незабравима екопътека от Рилския манастир до прочутите Седем рилски езера";
+            name = "Алея на Боснешкия карст";
+            description = "Алеята започва от покрайнините на село Боснек, изкачва се на север срещу течението на река Добри дол – десен приток на река Струма, продължава на запад, а после на юг и завършва отново в село Боснек.";
             location = {
-                region = "Рила";
-                keywords = ["рила", "седем езера", "рилски манастир", "езера"];
+                region = "Перник";
+                keywords = ["Боснек", "карст", "Витоша", "Добри дол", "природни местообитания"];
                 coordinates = {
-                    lat = 42.1333;
-                    lng = 23.3400;
+                    lat = 42.4995;
+                    lng = 23.1783;
                 };
             };
             trail_details = {
-                difficulty = "средна";
-                duration = "5-6 часа";
-                length = "12 км";
-                elevation = "+800м";
+                difficulty = "умерена";
+                duration = "3-4 часа";
+                length = "10 км";
+                elevation = "неизвестна";
             };
-            best_season = ["лято", "есен"];
+            best_season = ["Пролет", "Лято", "Есен"];
         };
 
         let trail3: TrailRecord = {
             id = 3;
-            name = "Екопътека Белинташ";
-            description = "Мистична екопътека до тракийското светилище Белинташ в Родопите";
+            name = "Алея на туриста до м. Струилица – Девин";
+            description = "Алеята представлява участък от асфалтов път западно от гр. Девин (от параклис Св. Георги до м. Струилица), по който са обособени места за отдих с маси, пейки, чешми и паркинги за автомобили.";
             location = {
-                region = "Родопи";
-                keywords = ["родопи", "белинташ", "тракийско светилище"];
+                region = "Девин";
+                keywords = ["tourism", "nature", "relaxation"];
                 coordinates = {
-                    lat = 41.7833;
-                    lng = 25.3167;
+                    lat = 41.6744;
+                    lng = 24.0800;
                 };
             };
             trail_details = {
-                difficulty = "лесна";
-                duration = "2-3 часа";
-                length = "5 км";
-                elevation = "+150м";
+                difficulty = "лека";
+                duration = "около 1 часа";
+                length = "1.6 км";
+                elevation = "неизвестна";
             };
-            best_season = ["пролет", "лято", "есен"];
+            best_season = ["Пролет", "Лято"];
+        };
+
+        // Add more trails from eco.json
+        let trail4: TrailRecord = {
+            id = 4;
+            name = "Ботаническа алея за незрящи";
+            description = "Разположена е в местността Дендрариума. Дължината ѝ е 610 метра, а представените растителни видове са 26 на брой, като за всеки един от тях е дадено описание и на брайлово писмо.";
+            location = {
+                region = "Дендрариум";
+                keywords = ["accessible", "botanical", "sightless", "tourism"];
+                coordinates = {
+                    lat = 42.6583;
+                    lng = 23.3323;
+                };
+            };
+            trail_details = {
+                difficulty = "лека";
+                duration = "около 1 часа";
+                length = "0.61 км";
+                elevation = "неизвестна";
+            };
+            best_season = ["Пролет", "Лято", "Есен"];
+        };
+
+        let trail5: TrailRecord = {
+            id = 5;
+            name = "Вазова екопютека";
+            description = "Туристическата дестинация \"Вазова екопютека\" е единствената, по която може да се отиде до природната забележителност водопад \"Скакля\".";
+            location = {
+                region = "Искърско дефиле";
+                keywords = ["исторически", "природа", "водопад"];
+                coordinates = {
+                    lat = 42.8321;
+                    lng = 23.4019;
+                };
+            };
+            trail_details = {
+                difficulty = "умерена";
+                duration = "1 час 30 минути";
+                length = "не е посочена км";
+                elevation = "неизвестна";
+            };
+            best_season = ["Пролет", "Лято", "Есен"];
         };
 
         trailMap.put(trail1.id, trail1);
         trailMap.put(trail2.id, trail2);
         trailMap.put(trail3.id, trail3);
+        trailMap.put(trail4.id, trail4);
+        trailMap.put(trail5.id, trail5);
         
-        nextTrailId := 4; // Set next ID after the 3 sample trails
+        nextTrailId := 6; // Set next ID after sample trails
 
-        Debug.print("✅ Initialized " # Nat.toText(trailMap.size()) # " sample trails");
+        Debug.print("✅ Initialized " # Nat.toText(trailMap.size()) # " sample trails from eco.json");
+    };
+
+    // Administrative function to reset and reload all trail data
+    public func resetAndLoadTrails() : async Text {
+        // Clear all existing trails
+        for ((id, _) in trailMap.entries()) {
+            trailMap.delete(id);
+        };
+        
+        // Reload sample trails
+        initializeSampleTrails();
+        
+        return "✅ Reset complete. Loaded " # Nat.toText(trailMap.size()) # " trails.";
     };
 
     // Initialize on first deployment

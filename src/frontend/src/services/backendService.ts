@@ -1,37 +1,21 @@
 import { backend } from "../../../declarations/backend";
+import type {
+  TrailRecord,
+  Coordinates,
+  Location,
+  TrailDetails,
+} from "../../../declarations/backend/backend.did";
 
-// Type definitions matching Motoko backend
-export interface Coordinates {
-  lat: number;
-  lng: number;
-}
+// Re-export types
+export type { TrailRecord, Coordinates, Location, TrailDetails };
 
-export interface Location {
-  region: string;
-  keywords: string[];
-  coordinates: Coordinates;
-}
-
-export interface TrailDetails {
-  difficulty: string;
-  duration: string;
-  length: string;
-  elevation: string;
-}
-
-export interface Trail {
-  id: string;
-  name: string;
-  description: string;
-  location: Location;
-  trail_details: TrailDetails;
-  best_season: string[];
-}
+// Convenience type alias
+export type Trail = TrailRecord;
 
 export interface SearchResult {
   success: boolean;
   trails: Trail[];
-  count: bigint;
+  count: number;
 }
 
 export interface ChatResponse {
@@ -69,12 +53,15 @@ export const backendService = {
   },
 
   /**
-   * Sends a prompt to the LLM backend
+   * Sends a prompt to the chatbot backend
    * @param prompt The user's prompt text
-   * @returns Promise with the LLM response
+   * @returns Promise with the chatbot response
    */
   async sendLlmPrompt(prompt: string): Promise<string> {
-    return await backend.prompt(prompt);
+    // Generate a simple user ID (in production, use proper authentication)
+    const userId = "user_" + Math.random().toString(36).substring(7);
+    const result = await backend.queryData(userId, prompt);
+    return result.response;
   },
 
   // ============================================================================
@@ -87,22 +74,23 @@ export const backendService = {
    * @returns Promise with search results
    */
   async searchTrails(query: string): Promise<SearchResult> {
-    const result = await backend.searchTrails(query);
+    const trails = await backend.searchTrails(query);
     return {
-      success: result.success,
-      trails: result.trails as Trail[],
-      count: result.count,
+      success: trails.length > 0,
+      trails: trails,
+      count: trails.length,
     };
   },
 
   /**
    * Get a specific trail by ID
-   * @param trailId Trail identifier
+   * @param trailId Trail identifier (as number or bigint)
    * @returns Promise with trail data or null
    */
-  async getTrailById(trailId: string): Promise<Trail | null> {
-    const result = await backend.getTrailById(trailId);
-    return result.length > 0 ? (result[0] as Trail) : null;
+  async getTrailById(trailId: number | bigint): Promise<Trail | null> {
+    const id = typeof trailId === "number" ? BigInt(trailId) : trailId;
+    const result = await backend.getTrailById(id);
+    return result.length > 0 && result[0] ? result[0] : null;
   },
 
   /**
@@ -110,8 +98,7 @@ export const backendService = {
    * @returns Promise with array of all trails
    */
   async listAllTrails(): Promise<Trail[]> {
-    const trails = await backend.listAllTrails();
-    return trails as Trail[];
+    return await backend.listAllTrails();
   },
 
   /**
@@ -126,15 +113,15 @@ export const backendService = {
     difficulty?: string,
     season?: string,
   ): Promise<SearchResult> {
-    const result = await backend.advancedSearch(
+    const trails = await backend.advancedSearch(
       region ? [region] : [],
       difficulty ? [difficulty] : [],
       season ? [season] : [],
     );
     return {
-      success: result.success,
-      trails: result.trails as Trail[],
-      count: result.count,
+      success: trails.length > 0,
+      trails: trails,
+      count: trails.length,
     };
   },
 
@@ -146,8 +133,21 @@ export const backendService = {
    */
   async queryData(userId: string, message: string): Promise<ChatResponse> {
     const result = await backend.queryData(userId, message);
+
+    // Parse the JSON response to extract the actual message
+    let responseText = result.response;
+    try {
+      const parsed = JSON.parse(result.response);
+      if (parsed.response) {
+        responseText = parsed.response;
+      }
+    } catch (e) {
+      // If parsing fails, use the original response
+      console.warn("Failed to parse response as JSON, using raw text");
+    }
+
     return {
-      response: result.response,
+      response: responseText,
       coords:
         result.coords.length > 0 ? (result.coords[0] as Coordinates) : null,
     };
