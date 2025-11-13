@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add complete trail database with search functionality (name, description, region, keywords, difficulty)
 - Add custom JSON parsing for AI responses with coordinate extraction
 - Add ICPChatService - modular JavaScript class for ICP canister communication
+- Add TypeScript version of ICPChatService with full type definitions
 - Add comprehensive ICP integration examples and documentation
 
 ### Changed
