@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add ICPChatService - modular JavaScript class for ICP canister communication
 - Add TypeScript version of ICPChatService with full type definitions
 - Add comprehensive ICP integration examples and documentation
+- Add OpenAI GPT-3.5-turbo integration module with HTTP outcalls support
+- Add documentation for using GPT-3.5-turbo and other AI models
 
 ### Changed
 

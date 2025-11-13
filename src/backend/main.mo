@@ -15,6 +15,13 @@ import Blob "mo:base/Blob";
 import Cycles "mo:base/ExperimentalCycles";
 import LLM "mo:llm";
 
+// Note: To use OpenAI GPT-3.5-turbo via HTTP outcalls, you would need:
+// 1. IC HTTP outcalls (requires management canister interface)
+// 2. API key management (stored securely)
+// 3. JSON encoding/decoding library
+// For now, using the ICP LLM canister which provides similar functionality
+// See OPENAI_MIGRATION.md for implementing direct OpenAI integration
+
 persistent actor {
     // ============================================================================
     // TYPE DEFINITIONS
